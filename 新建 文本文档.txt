@@ -1,0 +1,11 @@
+规则：https://rlcard.org/games.html#dou-dizhu
+https://zhuanlan.zhihu.com/p/415868101?utm_id=0
+
+需求分析要钱：https://blog.csdn.net/qq_42434318/article/details/116655395?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522170435412916800186565982%2522%252C%2522scm%2522%253A%252220140713.130102334..%2522%257D&request_id=170435412916800186565982&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~sobaiduend~default-4-116655395-null-null.142^v99^pc_search_result_base9&utm_term=%E5%8F%AB%E5%9C%B0%E4%B8%BB&spm=1018.2226.3001.4187
+规则：https://blog.csdn.net/fanhenghui/article/details/103406656?ops_request_misc=&request_id=&biz_id=102&utm_term=%E5%8F%AB%E5%9C%B0%E4%B8%BB&utm_medium=distribute.pc_search_result.none-task-blog-2~all~sobaiduweb~default-4-103406656.142^v99^pc_search_result_base9&spm=1018.2226.3001.4187
+
+斗地主：https://blog.csdn.net/u012870721/article/details/78800963?ops_request_misc=&request_id=&biz_id=102&utm_term=%E5%8F%AB%E5%9C%B0%E4%B8%BB&utm_medium=distribute.pc_search_result.none-task-blog-2~all~sobaiduweb~default-1-78800963.142^v99^pc_search_result_base9&spm=1018.2226.3001.4187
+
+使用redis支持分布式扩展
+
+TODO 把ws里的尽量用pipe
