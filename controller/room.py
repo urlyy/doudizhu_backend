@@ -33,13 +33,17 @@ async def search_room(rank: int, level: int, authorization: Union[str, None] = H
             return Response.ok()
 
 
-# @router.post("/room/play")
-# async def create_ai_room():
-#     return Response.ok({"user": user.model_dump()})
+@router.get("/play/ai")
+async def create_ai_room(rank: int, authorization: Union[str, None] = Header(None, convert_underscores=True)):
+    user_id = jwt.get_user_id(authorization)
+    room_id = RoomManager.create_room(True)
+    Room.enter_ai(room_id)
+    Room.enter_player(room_id, user_id, rank, True)
+    return Response.ok()
+
 
 @router.get("/{room_id}")
 async def get_room_data(room_id: str, authorization: Union[str, None] = Header(None, convert_underscores=True)):
     # user_id = jwt.get_user_id(authorization)
     room_data = Room.get_by_id(room_id)
     return Response.ok(data={"room_data": room_data})
-

@@ -4,13 +4,14 @@ from peewee import PostgresqlDatabase, Model, CharField, IntegerField, ForeignKe
 from playhouse.shortcuts import ReconnectMixin
 from playhouse.pool import PooledPostgresqlDatabase
 
-DB_NAME = 'czq'
+from utils import config
 
+c = config.get("postgres")
 #实现这个类可以避免崩溃
 class ReconnectPostgresqlDatabase(ReconnectMixin, PooledPostgresqlDatabase):
     pass
 
-db = ReconnectPostgresqlDatabase(DB_NAME, host="192.168.88.132",user='postgres', password='root')
+db = ReconnectPostgresqlDatabase(c['database'], host=c['host'],user=c['user'], password=c['password'])
 
 class BaseModel(Model):
     create_time = DateTimeField(default=datetime.now, verbose_name="添加时间")

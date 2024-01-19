@@ -5,9 +5,10 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
-from utils import config,my_socket
+from utils import config, my_socket
 
-app =  None
+app = None
+
 
 def create_app():
     app = FastAPI(
@@ -24,6 +25,7 @@ def create_app():
         allow_methods=["*"],
         allow_headers=["*"]
     )
+
     # 解决无法访问Swagger的问题
     def swagger_monkey_patch(*args, **kwargs):
         return get_swagger_ui_html(
@@ -31,8 +33,10 @@ def create_app():
             swagger_js_url='https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui-bundle.js',
             swagger_css_url='https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui.css'
         )
+
     applications.get_swagger_ui_html = swagger_monkey_patch
     return app
+
 
 def set_route(app: FastAPI, sio_app: socketio.ASGIApp):
     import controller
@@ -44,10 +48,12 @@ def set_route(app: FastAPI, sio_app: socketio.ASGIApp):
     app.include_router(controller.user.router, prefix="/user", tags=["user"])
     app.include_router(controller.room.router, prefix="/room", tags=["room"])
 
+
 def set_sio_route(sio: socketio.AsyncServer):
-    from ws import game,chat
+    from ws import game, chat
     sio.register_namespace(game.GameSocket(game.namespace))
     sio.register_namespace(chat.ChatSocket(chat.namespace))
+
 
 if __name__ == '__main__':
     # 创建fastapi的服务和socketio的服务，并整合
@@ -55,10 +61,10 @@ if __name__ == '__main__':
     sio = my_socket.sio
     sio_asgi_app = socketio.ASGIApp(socketio_server=sio, other_asgi_app=app)
     # 集中设置两者的路由
-    set_route(app,sio_asgi_app)
+    set_route(app, sio_asgi_app)
     set_sio_route(sio)
     # 启动服务
     print("qidong")
     uvicorn.run(app, host=config.get("server.host"), port=config.get("server.port")
-                ,log_level='warning'
+                # ,log_level='warning'
                 )

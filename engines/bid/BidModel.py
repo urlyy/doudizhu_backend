@@ -120,6 +120,6 @@ def predict_score(cards):
     return result[0].item()
 
 
-if __name__ == "__main__":
-    cards = "333444569TTJJQKK2"
-    print(predict_score(cards))
+# if __name__ == "__main__":
+#     cards = "333444569TTJJQKK2"
+#     print(predict_score(cards))

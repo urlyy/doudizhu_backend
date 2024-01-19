@@ -9,13 +9,13 @@ from pydantic import BaseModel
 from DO.room import Room
 from DO.user import User
 from utils import redis_key
-
+from engines.czq import global_envs
 
 class RoomManager:
     @classmethod
-    def create_room(cls):
+    def create_room(cls,is_ai=False):
         room_id = str(uuid.uuid4().int)[:]
-        Room.init(room_id)
+        Room.init(room_id,is_ai)
         return room_id
 
     # 为用户匹配，只返回目标房间id，不进行进入操作
@@ -49,6 +49,11 @@ class RoomManager:
         return cnt == 0
 
     @classmethod
+    def is_ai_room(cls,room_id):
+        room_key = redis_key.room(room_id)
+        return redis.hget(room_key,"is_ai").decode("utf-8")=="True"
+
+    @classmethod
     def is_room_full(cls, room_id):
         room_key = redis_key.room(room_id)
         # 人数不够就删除房间
@@ -66,6 +71,8 @@ class RoomManager:
         p.delete(room_key)
         p.zrem(room_sorted_key,room_id)
         p.execute()
+        global_envs.pop(room_id)
+
 
 
 # class Player(BaseModel):

@@ -1,5 +1,6 @@
-import socketio
+import time
 
+import socketio
 from DO.room import Room
 from utils.my_socket import sio
 from utils import my_jwt, redis_key
@@ -10,7 +11,6 @@ namespace = "/game"
 
 
 class GameSocket(socketio.AsyncNamespace):
-
     def __init__(self, namespace):
         super(GameSocket, self).__init__(namespace)
 
@@ -39,15 +39,13 @@ class GameSocket(socketio.AsyncNamespace):
         if room_id:
             sio.leave_room(sid, room_id, namespace)
             Room.leave_player(room_id, user_id)
-            if RoomManager.is_room_empty(room_id):
+            if RoomManager.is_room_empty(room_id) or RoomManager.is_ai_room(room_id):
                 RoomManager.rm_room(room_id)
             else:
                 await self.emit_refresh(room_id)
 
     async def on_player_ready(self, sid, data):
-        print("来了")
         user_id, room_id = self.get_ids(data)
-        print(room_id)
         Room.ready_player(room_id, user_id)
         await self.emit_refresh(room_id)
 
@@ -69,21 +67,30 @@ class GameSocket(socketio.AsyncNamespace):
         played_cards = data['cards']
         res, game_end = Room.play_cards(room_id, user_id, played_cards)
         if game_end:
+            print("游戏结束")
             room_data = Room.get_by_id(room_id)
+            room_data['is_end']=True
             # 先让前端弹出弹窗
-            room_data['is_end'] = True
             await sio.emit('refresh', room_data, namespace=namespace, room=room_id)
             # 再结算数据，这里也需要修改room_data
-            settlement_data = Room.settlement(room_id,room_data)
+            settlement_data = Room.settlement(room_id, room_data)
             await sio.emit('settlement', settlement_data, namespace=namespace, room=room_id)
             # 然后重置房间数据，但是保留玩家信息
             Room.init(room_id, room_data)
         else:
             await self.emit_refresh(room_id)
 
+    async def on_ai_play_cards(self, sid, data):
+        _, room_id = self.get_ids(data)
+        idx = data['idx']
+        Room.ai_play_cards(room_id, idx)
+        # time.sleep(5)
+        await self.emit_refresh(room_id)
+
+
     async def on_pass(self, sid, data):
         user_id, room_id = self.get_ids(data)
-        Room.pass_cards(room_id)
+        Room.human_pass_cards(room_id)
         await self.emit_refresh(room_id)
 
     async def on_connect(self, sid, environ):
