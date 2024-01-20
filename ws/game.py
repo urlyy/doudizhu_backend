@@ -27,9 +27,12 @@ class GameSocket(socketio.AsyncNamespace):
         return user_id, room_id
 
     async def on_player_enter(self, sid, data):
+
         user_id, room_id = self.get_ids(data)
+        print("进来了",user_id,room_id)
         if room_id:
             sio.enter_room(sid, room_id, namespace)
+            print("推送回去了")
             await self.emit_refresh(room_id)
         else:
             await sio.emit('error', namespace=namespace, room=room_id)

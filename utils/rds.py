@@ -1,4 +1,6 @@
 import redis
+from utils import config
 
-pool = redis.ConnectionPool(host='192.168.88.132', port=6379, db=0, password="root")
+
+pool = redis.ConnectionPool(host=config.get("redis.host"), port=config.get("redis.port"), db=config.get("redis.db"), password=config.get("redis.password"))
 conn = redis.StrictRedis(connection_pool=pool)
