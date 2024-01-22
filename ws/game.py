@@ -87,7 +87,7 @@ class GameSocket(socketio.AsyncNamespace):
         _, room_id = self.get_ids(data)
         idx = data['idx']
         Room.ai_play_cards(room_id, idx)
-        # time.sleep(5)
+        time.sleep(3)
         await self.emit_refresh(room_id)
 
 

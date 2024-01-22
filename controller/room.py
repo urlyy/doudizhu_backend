@@ -16,7 +16,7 @@ router = APIRouter()
 
 
 # 在子路由中定义路由
-@router.get("/play")
+@router.get("/play/human")
 async def search_room(rank: int, level: int, authorization: Union[str, None] = Header(None, convert_underscores=True)):
     user_id = jwt.get_user_id(authorization)
     room_id = redis.get(redis_key.player2room(user_id))
@@ -33,7 +33,7 @@ async def search_room(rank: int, level: int, authorization: Union[str, None] = H
             return Response.ok()
 
 
-@router.get("/play/{room_id}")
+@router.get("/play/human/{room_id}")
 async def search_room_by_id(room_id,rank: int, authorization: Union[str, None] = Header(None, convert_underscores=True)):
     user_id = jwt.get_user_id(authorization)
     user_room_id = redis.get(redis_key.player2room(user_id))
