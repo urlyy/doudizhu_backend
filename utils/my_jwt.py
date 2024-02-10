@@ -11,7 +11,7 @@ def create_jwt(user_id: int) -> str:
         # 公共声明
         'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1),  # 过期时间
         'iat': datetime.datetime.utcnow(),  # 开始时间
-        'iss': 'czq',  # (Issuer) 指明此token的签发者
+        'iss': 'play_cards',  # (Issuer) 指明此token的签发者
         # 私有声明
         'data': {
             'user_id': user_id,
@@ -24,7 +24,7 @@ def create_jwt(user_id: int) -> str:
 
 def get_payload(token: str, key=None) -> int | None:
     try:
-        claim = jwt.decode(token, secret_key, issuer='czq', algorithms=['HS256'])
+        claim = jwt.decode(token, secret_key, issuer='play_cards', algorithms=['HS256'])
         payload = claim.get("data")
         if key:
             return payload.get(key)

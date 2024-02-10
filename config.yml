@@ -1,6 +1,6 @@
 server:
 #  host: localhost
-  host: 192.168.243.136
+  host: localhost
   port: 8000
   static_dir: static
 postgres:
@@ -15,5 +15,5 @@ redis:
   password: root
   db: 0
 jwt:
-  secret: czq
+  secret: play_cards
 

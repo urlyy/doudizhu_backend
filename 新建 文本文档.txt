@@ -8,4 +8,3 @@ https://zhuanlan.zhihu.com/p/415868101?utm_id=0
 
 使用redis支持分布式扩展
 
-TODO 把ws里的尽量用pipe

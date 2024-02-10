@@ -1,15 +1,9 @@
 import uuid
-from typing import List, Tuple
-
-import jsonpickle
 
 from utils.rds import conn as redis
-import json
-from pydantic import BaseModel
 from DO.room import Room
-from DO.user import User
 from utils import redis_key
-from engines.czq import global_envs
+from ai.play_cards import global_envs
 
 
 class RoomManager:

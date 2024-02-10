@@ -11,6 +11,7 @@ def card2code(number: str) -> int:
                         'K': 10, 'A': 11, '2': 12, 'X': 13, 'D': 14}
     return RealCard2EnvCard[number]
 
+
 # 原地排序
 def sort_cards(cards: List[Card] | List[dict]):
     if len(cards) == 0:
@@ -19,6 +20,7 @@ def sort_cards(cards: List[Card] | List[dict]):
         cards.sort(key=lambda c: card2code(c['number']), reverse=True)
     elif isinstance(cards[0], Card):
         cards.sort(key=lambda c: card2code(c.number), reverse=True)
+
 
 def game_init_cards():
     def init_cards() -> List[Card]:
@@ -40,9 +42,9 @@ def game_init_cards():
     def random_hand_cards(remaining_cards: List[Card]) -> List[Card]:
         cards = []
         for _ in range(17):
-            # idx = randint(1, len(remaining_cards) - 1)
+            idx = randint(1, len(remaining_cards) - 1)
             # 测试用
-            idx = 0
+            # idx = 0
             cards.append(remaining_cards[idx])
             remaining_cards.pop(idx)
         return cards
@@ -72,9 +74,19 @@ def generate_room_id():
     #         ids.add(id)
     # print(cnt)
 
+
 # 返回金币/排名的差值
-def settlement_dizhu(coin,rank,base_score,multiple,is_dizhu,is_winner,withdraw=False):
-    pass
-
-
-
+def settlement(base_score: int, multiple: int, is_dizhu: bool, is_winner: bool, withdraw: bool = False):
+    base_coin_diff = 50
+    coin_diff = base_score * multiple
+    rank_diff = 100
+    if not is_winner:
+        coin_diff = -coin_diff
+        rank_diff = -100
+    if is_dizhu:
+        coin_diff *= 2
+        rank_diff *= 2
+    if withdraw:
+        coin_diff = -abs(coin_diff * 3)
+        rank_diff = -abs(rank_diff * 3)
+    return coin_diff * base_coin_diff, rank_diff

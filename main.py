@@ -66,5 +66,5 @@ if __name__ == '__main__':
     # 启动服务
     print("qidong")
     uvicorn.run(app, host=config.get("server.host"), port=config.get("server.port")
-                # ,log_level='warning'
+                ,log_level='warning'
                 )
