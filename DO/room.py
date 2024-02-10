@@ -155,9 +155,10 @@ class Room:
         sum_rank = 0
         for p, p_key, i in cls.players_iter(room_key):
             if p:
-                player = Player.loads(p)
-                sum_rank += player['rank']
-                sum_num += 1
+                player = jsonpickle.decode(p)
+                if player['is_ai'] == False:
+                    sum_rank += player['rank']
+                    sum_num += 1
         # 满人的时候不加入排名
         if sum_num == 3 or sum_num == 0:
             redis.zrem(redis_key.room_rank_sorted(), room_id)
