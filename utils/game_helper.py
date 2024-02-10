@@ -77,12 +77,12 @@ def generate_room_id():
 
 # 返回金币/排名的差值
 def settlement(base_score: int, multiple: int, is_dizhu: bool, is_winner: bool, withdraw: bool = False):
-    base_coin_diff = 50
+    base_coin_diff = 100
     coin_diff = base_score * multiple
-    rank_diff = 100
+    rank_diff = 30
     if not is_winner:
         coin_diff = -coin_diff
-        rank_diff = -100
+        rank_diff = -30
     if is_dizhu:
         coin_diff *= 2
         rank_diff *= 2

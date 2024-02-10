@@ -22,6 +22,7 @@ async def search_room(rank: int, level: int, authorization: Union[str, None] = H
     room_id = redis.get(redis_key.player2room(user_id))
     # 中途返场
     if room_id != None:
+        print("老兵返厂")
         return Response.ok()
     else:
         # 新游戏
@@ -54,10 +55,15 @@ async def search_room_by_id(room_id,rank: int, authorization: Union[str, None] =
 @router.get("/play/ai")
 async def create_ai_room(rank: int, authorization: Union[str, None] = Header(None, convert_underscores=True)):
     user_id = jwt.get_user_id(authorization)
-    room_id = RoomManager.create_room(True)
-    Room.enter_ai(room_id)
-    Room.enter_player(room_id, user_id, rank, True)
-    return Response.ok()
+    user_room_id = redis.get(redis_key.player2room(user_id))
+    # 中途返场
+    if user_room_id != None:
+        return Response.fail(message="您上一把还没结束")
+    else:
+        room_id = RoomManager.create_room(True)
+        Room.enter_ai(room_id)
+        Room.enter_player(room_id, user_id, rank, True)
+        return Response.ok()
 
 
 @router.get("/{room_id}")

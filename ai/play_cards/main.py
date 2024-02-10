@@ -113,12 +113,11 @@ def create_env(room_id):
 def human_run(env: GameEnv, played_cards):
     cards = transform_cards(played_cards)
     print("当前角色:", env.acting_player_position)
-    # print("选项:",
-    #       list(map(lambda cards: list(map(lambda c: EnvCard2RealCard[c], cards)), env.game_infoset.legal_actions)))
-    # print("选项:", env.game_infoset.legal_actions)
+    print("选项:",
+          list(map(lambda cards: list(map(lambda c: EnvCard2RealCard[c], cards)), env.game_infoset.legal_actions)))
     # 排个序
     cards.sort()
-    # print("打出:", cards)
+    print("打出:", cards)
     env.step(cards)
 
 
@@ -126,8 +125,8 @@ def human_run(env: GameEnv, played_cards):
 # 我这里没写状态，因为是先地主后两个农民，所以这个状态算是让业务层维护
 def ai_run(env:GameEnv):
     print("当前角色:", env.acting_player_position)
-    # print("选项",
-    #       list(map(lambda cards: list(map(lambda c: EnvCard2RealCard[c], cards)), env.game_infoset.legal_actions)))
+    print("选项",
+          list(map(lambda cards: list(map(lambda c: EnvCard2RealCard[c], cards)), env.game_infoset.legal_actions)))
     played_cards = env.step()
     res = list(map(lambda c: EnvCard2RealCard[c], played_cards))
     # print("打出", res)

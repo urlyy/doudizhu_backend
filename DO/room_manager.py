@@ -1,5 +1,7 @@
 import uuid
 
+import jsonpickle
+
 from utils.rds import conn as redis
 from DO.room import Room
 from utils import redis_key
@@ -41,6 +43,9 @@ class RoomManager:
         for p, p_key, i in Room.players_iter(room_key):
             if p:
                 cnt += 1
+                player = jsonpickle.decode(p)
+                if player['is_withdraw'] == True:
+                    cnt-=1
         return cnt == 0
 
     @classmethod
@@ -67,10 +72,16 @@ class RoomManager:
     def rm_room(cls, room_id):
         room_key = redis_key.room(room_id)
         room_sorted_key = redis_key.room_rank_sorted()
-        p = redis.pipeline()
-        p.delete(room_key)
-        p.zrem(room_sorted_key, room_id)
-        p.execute()
+        pipe = redis.pipeline()
+        pipe.delete(room_key)
+        pipe.zrem(room_sorted_key, room_id)
+        # 删玩家
+        for p_str, p_key, i in Room.players_iter(room_key):
+            if p_str:
+                player = jsonpickle.decode(p_str)
+                user_id = player['user_id']
+                pipe.delete(redis_key.player2room(user_id))
+        pipe.execute()
         if room_id in global_envs.keys():
             global_envs.pop(room_id)
 

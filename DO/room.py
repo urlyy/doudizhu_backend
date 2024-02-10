@@ -1,4 +1,5 @@
 import json
+import time
 from typing import List, Tuple
 
 import jsonpickle
@@ -13,6 +14,8 @@ import copy
 from ai.bid.main import bid as get_ai_bid
 from PO.user import User as DB_User
 from ai.play_cards import global_envs
+from PO.play_record import PlayRecord as DB_PlayRecord
+
 
 STATUS_WAITING = 0
 STATUS_BID = 1
@@ -29,7 +32,7 @@ class Player:
     is_tuoguan: bool
     bid_score: int
     is_withdraw: bool
-    tmp_bid_key: str
+
 
     @classmethod
     def generate(cls, user_id, idx, rank, is_ai=False):
@@ -70,6 +73,7 @@ class Room:
     last_cards: List[Card]
     base_score: int
     multiple: int
+    tmp_bid_key: str
 
     @classmethod
     def init_data(cls, id, is_ai=False):
@@ -99,13 +103,19 @@ class Room:
         if prev_data != None:
             for i in range(3):
                 p_key = f'p-{i}'
-                prev_data['players'][i]['cards'] = []
-                prev_data['players'][i]['is_ready'] = False
-                prev_data['players'][i]['is_dizhu'] = False
-                prev_data['players'][i]['is_tuoguan'] = False
-                prev_data['players'][i]['is_withdraw'] = False
+                # 已经走了的人不能进来了
+                print("上一次的数据",prev_data['players'][i])
+                if prev_data['players'][i]['is_withdraw']==True:
+                    prev_data['players'][i] = {}
+                else:
+                    prev_data['players'][i]['cards'] = []
+                    prev_data['players'][i]['is_ready'] = False
+                    prev_data['players'][i]['is_dizhu'] = False
+                    prev_data['players'][i]['is_tuoguan'] = False
+                    prev_data['players'][i]['is_withdraw'] = False
                 player = jsonpickle.encode(prev_data['players'][i], unpicklable=False)
                 room_data[p_key] = player
+            cls.__update_room_rank(room_id)
         key = redis_key.room(room_id)
         redis.hset(key, mapping=room_data)
         if room_id in global_envs:
@@ -249,6 +259,8 @@ class Room:
             player['cards']: list = cards_group[i]
             redis.hset(room_key, p_key, jsonpickle.encode(player, unpicklable=False))
         redis.hset(room_key, "dizhu_cards", jsonpickle.encode(cards_group[-1], unpicklable=False))
+        timestamp = int(time.time() * 1000)
+        redis.hset(room_key, 'cur_term_begin_time', timestamp)
 
     @classmethod
     def ready_cancel_player(cls, room_id, user_id):
@@ -307,6 +319,8 @@ class Room:
             # 走下一个
             next_player_idx = str((int(p_key.split("-")[1]) + 1) % 3)
             cls.__to_next(room_key, next_player_idx)
+        timestamp = int(time.time() * 1000)
+        redis.hset(room_key, 'cur_term_begin_time', timestamp)
 
     @classmethod
     def get_status(cls, room_id) -> int:
@@ -347,6 +361,8 @@ class Room:
         pipe.hset(room_key, f"p-{player_idx}", jsonpickle.encode(player, unpicklable=False))
         pipe.hset(room_key, 'last_cards', jsonpickle.encode(played_cards, unpicklable=False))
         pipe.hset(room_key, 'last_cards_player_idx', cur_player_idx)
+        timestamp = int(time.time() * 1000)
+        pipe.hset(room_key, 'cur_term_begin_time', timestamp)
         pipe.execute()
         cls.__to_next(room_key, next_player_idx)
         if len(player['cards']) == 0:
@@ -409,9 +425,10 @@ class Room:
         room_key = redis_key.room(room_id)
         player, p_key = cls.find_player_by_idx(room_key, idx)
         # ai也要走一步
-        is_ai = redis.hget(room_key, "is_ai").decode('utf-8')
-        if is_ai == "True":
-            play_cards.human_run(play_cards.global_envs[room_id], played_cards)
+        # is_ai = redis.hget(room_key, "is_ai").decode('utf-8')
+        # if is_ai == "True":
+        # 是不是ai都要走
+        play_cards.human_run(play_cards.global_envs[room_id], played_cards)
         return cls.__play_cards(room_id, player, played_cards, idx)
 
     @classmethod
@@ -421,6 +438,8 @@ class Room:
         cur_player_idx = redis.hget(room_key, 'cur_player_idx')
         next_player_idx = str((int(cur_player_idx) + 1) % 3)
         last_cards_player_idx = redis.hget(room_key, 'last_cards_player_idx').decode('utf-8')
+        timestamp = int(time.time() * 1000)
+        redis.hset(room_key, 'cur_term_begin_time', timestamp)
         # 将当前的人替换成刚pass的这个
         cls.__to_next(room_key, next_player_idx)
         # 如果一圈都打不起，打这张牌的人继续打
@@ -430,8 +449,8 @@ class Room:
     @classmethod
     def human_pass_cards(cls, room_id):
         is_ai = redis.hget(redis_key.room(room_id), "is_ai").decode('utf-8')
-        if is_ai == "True":
-            play_cards.human_run(play_cards.global_envs[room_id], [])
+        # if is_ai == "True":
+        play_cards.human_run(play_cards.global_envs[room_id], [])
         cls.__pass_cards(room_id)
 
     @classmethod
@@ -478,9 +497,13 @@ class Room:
                 else:
                     new_rank, new_coin = db_player.coin, db_player.rank
             else:
+                env: GameEnv = global_envs[room_id]
+                bomb_num = env.get_bomb_num()
+                if bomb_num >0:
+                    multiple = 2**bomb_num
+                else:
+                    multiple = 1
                 coin_diff, rank_diff = gh.settlement(base_score, multiple, game_player['is_dizhu'], is_winner,game_player['is_withdraw'])
-                env:GameEnv = global_envs[room_id]
-                print(env.get_bomb_num())
                 new_coin = db_player.coin + coin_diff
                 new_rank = db_player.rank + rank_diff
                 if new_rank <= 0:
@@ -489,6 +512,7 @@ class Room:
                     new_coin = 0
                 DB_User.update(rank=new_rank).where(DB_User.id == db_player.id).execute()
                 DB_User.update(coin=new_coin).where(DB_User.id == db_player.id).execute()
+                DB_PlayRecord(user_id=db_player.id,role=game_player['is_dizhu'],result=is_winner,type=1,rank_diff=rank_diff,coin_diff=coin_diff).save()
             return {
                 "username": db_player.username, 'avatar': db_player.avatar,
                 'is_dizhu': game_player['is_dizhu'], 'is_winner': is_winner,

@@ -6,6 +6,7 @@ from DO.response import Response
 from DO.user import User
 from PO.user import User as DB_User
 from utils import my_jwt
+from PO.play_record import PlayRecord as DB_PlayRecord
 
 router = APIRouter()
 
@@ -46,3 +47,8 @@ async def update_avatar(avatar: str, authorization: Union[str, None] = Header(No
     my_id = my_jwt.get_user_id(authorization)
     DB_User.update(avatar=avatar).where(DB_User.id == my_id).execute()
     return Response.ok()
+
+@router.get("/{user_id}/records")
+async def get_play_records(user_id: int):
+    res = list(DB_PlayRecord.select().where(DB_PlayRecord.user_id==user_id).limit(10).dicts())
+    return Response.ok({"records":res})

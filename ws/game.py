@@ -10,6 +10,7 @@ from DO.room_manager import RoomManager
 
 namespace = "/game"
 
+sleep_time = 1
 
 class GameSocket(socketio.AsyncNamespace):
     def __init__(self, namespace):
@@ -34,9 +35,11 @@ class GameSocket(socketio.AsyncNamespace):
 
     async def on_player_enter(self, sid, data):
         user_id, room_id, _, _ = self.get_ids(data)
+        print("进入", room_id, user_id)
         if room_id:
             sio.enter_room(sid, room_id, namespace)
             # 返场
+
             if redis.exists(redis_key.player2room(user_id)) == 1:
                 Room.back_player_during_play(room_id, user_id)
             await self.emit_refresh(room_id)
@@ -67,8 +70,8 @@ class GameSocket(socketio.AsyncNamespace):
         if RoomManager.is_room_empty(room_id) or RoomManager.is_ai_room(room_id):
             RoomManager.rm_room(room_id)
         else:
-            print(cur_idx == idx, cur_idx, idx, type(cur_idx), type(idx))
-            if cur_idx == idx:
+            # print(cur_idx == idx, cur_idx, idx, type(cur_idx), type(idx))
+            if cur_idx == str(idx):
                 cur_status = Room.get_status(room_id)
                 if cur_status == 1:
                     await self.on_ai_bid(sid, data)
@@ -113,6 +116,7 @@ class GameSocket(socketio.AsyncNamespace):
     async def on_ai_bid(self, sid, data):
         user_id, room_id, cur_idx, _ = self.get_ids(data)
         Room.ai_bid(room_id, cur_idx)
+        # await asyncio.sleep(sleep_time)
         await self.emit_refresh(room_id)
         # print("ai_bid 下一个idx", cur_player_idx)
         cur_status = Room.get_status(room_id)
@@ -121,9 +125,10 @@ class GameSocket(socketio.AsyncNamespace):
         if self.is_next_tuoguan(room_id):
             # data['idx'] = (idx + 1) % 3
             loop = asyncio.get_event_loop()
+            print("cur_status",cur_status,type(cur_status))
             if cur_status == 1:
                 async def tmp(sid, data):
-                    time.sleep(1)
+                    await asyncio.sleep(sleep_time)
                     await self.on_ai_bid(sid, data)
 
                 await loop.create_task(tmp(sid, data))
@@ -131,9 +136,8 @@ class GameSocket(socketio.AsyncNamespace):
                 # print("来打牌了")
                 # await loop.create_task(self.on_ai_play_cards(sid, data))
                 async def tmp(sid, data):
-                    time.sleep(1)
+                    await asyncio.sleep(sleep_time)
                     await self.on_ai_play_cards(sid, data)
-
                 await loop.create_task(tmp(sid, data))
 
     # 打出牌
@@ -151,8 +155,8 @@ class GameSocket(socketio.AsyncNamespace):
                 loop = asyncio.get_event_loop()
 
                 async def tmp(sid, data):
-                    time.sleep(1)
-                    await self.on_play_cards(sid, data)
+                    await asyncio.sleep(sleep_time)
+                    await self.on_ai_play_cards(sid, data)
 
                 await loop.create_task(tmp(sid, data))
 
@@ -171,19 +175,18 @@ class GameSocket(socketio.AsyncNamespace):
 
     async def on_ai_play_cards(self, sid, data):
         _, room_id, cur_idx, _ = self.get_ids(data)
-        # print("打牌了,现在的idx",idx)
         res, game_end = Room.ai_play_cards(room_id, cur_idx)
         if game_end:
             await self.handle_end(room_id)
         else:
-            # time.sleep(3)
+            # await asyncio.sleep(sleep_time)
             await self.emit_refresh(room_id)
-            loop = asyncio.get_event_loop()
             if self.is_next_tuoguan(room_id):
                 async def tmp(sid, data):
-                    time.sleep(1)
+                    await asyncio.sleep(sleep_time)
                     await self.on_ai_play_cards(sid, data)
 
+                loop = asyncio.get_event_loop()
                 await loop.create_task(tmp(sid, data))
 
     async def on_pass(self, sid, data):
@@ -192,12 +195,11 @@ class GameSocket(socketio.AsyncNamespace):
         await self.emit_refresh(room_id)
         if self.is_next_tuoguan(room_id):
             # data['idx'] = (idx + 1) % 3
-            loop = asyncio.get_event_loop()
-
             async def tmp(sid, data):
-                time.sleep(3)
+                await asyncio.sleep(sleep_time)
                 await self.on_ai_play_cards(sid, data)
 
+            loop = asyncio.get_event_loop()
             await loop.create_task(tmp(sid, data))
 
     async def on_set_tuoguan(self, sid, data):
