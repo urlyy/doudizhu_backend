@@ -39,7 +39,6 @@ class GameSocket(socketio.AsyncNamespace):
         if room_id:
             sio.enter_room(sid, room_id, namespace)
             # 返场
-
             if redis.exists(redis_key.player2room(user_id)) == 1:
                 Room.back_player_during_play(room_id, user_id)
             await self.emit_refresh(room_id)
@@ -171,7 +170,11 @@ class GameSocket(socketio.AsyncNamespace):
         await sio.emit('settlement', settlement_data, namespace=namespace, room=room_id)
         # 然后重置房间数据，但是保留玩家信息
         is_ai = room_data['is_ai'] == 'True'
-        Room.init(room_id, is_ai, room_data)
+        # ai房间直接删掉
+        if is_ai:
+            RoomManager.rm_room(room_id)
+        else:
+            Room.init(room_id, is_ai, room_data)
 
     async def on_ai_play_cards(self, sid, data):
         _, room_id, cur_idx, _ = self.get_ids(data)

@@ -16,7 +16,6 @@ from PO.user import User as DB_User
 from ai.play_cards import global_envs
 from PO.play_record import PlayRecord as DB_PlayRecord
 
-
 STATUS_WAITING = 0
 STATUS_BID = 1
 STATUS_PLAYING = 2
@@ -32,7 +31,6 @@ class Player:
     is_tuoguan: bool
     bid_score: int
     is_withdraw: bool
-
 
     @classmethod
     def generate(cls, user_id, idx, rank, is_ai=False):
@@ -92,7 +90,7 @@ class Room:
             "last_cards_player_idx": -1,
             "is_ai": "True" if is_ai else "False",
             'tmp_bid_key': 'p-0',
-            'cur_term_begin_time':-1,
+            'cur_term_begin_time': -1,
         }
 
     @classmethod
@@ -104,8 +102,8 @@ class Room:
             for i in range(3):
                 p_key = f'p-{i}'
                 # 已经走了的人不能进来了
-                print("上一次的数据",prev_data['players'][i])
-                if prev_data['players'][i]['is_withdraw']==True:
+                print("上一次的数据", prev_data['players'][i])
+                if prev_data['players'][i]['is_withdraw'] == True:
                     prev_data['players'][i] = {}
                 else:
                     prev_data['players'][i]['cards'] = []
@@ -113,6 +111,7 @@ class Room:
                     prev_data['players'][i]['is_dizhu'] = False
                     prev_data['players'][i]['is_tuoguan'] = False
                     prev_data['players'][i]['is_withdraw'] = False
+                    prev_data['players'][i]['bid_score'] = -1
                 player = jsonpickle.encode(prev_data['players'][i], unpicklable=False)
                 room_data[p_key] = player
             cls.__update_room_rank(room_id)
@@ -212,7 +211,6 @@ class Room:
             player['is_withdraw'] = True
             player['is_tuoguan'] = True
             redis.hset(room_key, p_key, jsonpickle.encode(player, unpicklable=False))
-
 
     @classmethod
     def back_player_during_play(cls, room_id, user_id):
@@ -500,11 +498,12 @@ class Room:
             else:
                 env: GameEnv = global_envs[room_id]
                 bomb_num = env.get_bomb_num()
-                if bomb_num >0:
-                    multiple = 2**bomb_num
+                if bomb_num > 0:
+                    multiple = 2 ** bomb_num
                 else:
                     multiple = 1
-                coin_diff, rank_diff = gh.settlement(base_score, multiple, game_player['is_dizhu'], is_winner,game_player['is_withdraw'])
+                coin_diff, rank_diff = gh.settlement(base_score, multiple, game_player['is_dizhu'], is_winner,
+                                                     game_player['is_withdraw'])
                 new_coin = db_player.coin + coin_diff
                 new_rank = db_player.rank + rank_diff
                 if new_rank <= 0:
@@ -513,13 +512,18 @@ class Room:
                     new_coin = 0
                 DB_User.update(rank=new_rank).where(DB_User.id == db_player.id).execute()
                 DB_User.update(coin=new_coin).where(DB_User.id == db_player.id).execute()
-                DB_PlayRecord(user_id=db_player.id,role=game_player['is_dizhu'],result=is_winner,type=1,rank_diff=rank_diff,coin_diff=coin_diff).save()
+                DB_PlayRecord(user_id=db_player.id, role=game_player['is_dizhu'], result=is_winner, type=1,
+                              rank_diff=rank_diff, coin_diff=coin_diff).save()
+            user_id = None
+            if game_player['is_ai'] == False:
+                user_id = db_player.id
             return {
+                "user_id": user_id,
                 "username": db_player.username, 'avatar': db_player.avatar,
                 'is_dizhu': game_player['is_dizhu'], 'is_winner': is_winner,
                 'coin_diff': coin_diff, 'rank_diff': rank_diff,
                 'new_coin': new_coin, 'new_rank': new_rank,
-                'is_withdraw':game_player['is_withdraw']
+                'is_withdraw': game_player['is_withdraw']
             }
 
         res = list(map(lambda p: handle_person(p, is_ai_room), players))

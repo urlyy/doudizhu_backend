@@ -13,3 +13,6 @@ redis-server.exe redis.windows.conf
 ```shell
 flushdb
 ```
+
+注意第一个出牌的人必须要打牌！！！不然会出bug
+如果房间一开始没显示出来，4秒后会显示

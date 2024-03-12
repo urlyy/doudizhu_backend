@@ -22,7 +22,6 @@ async def search_room(rank: int, level: int, authorization: Union[str, None] = H
     room_id = redis.get(redis_key.player2room(user_id))
     # 中途返场
     if room_id != None:
-        print("老兵返厂")
         return Response.ok()
     else:
         # 新游戏
