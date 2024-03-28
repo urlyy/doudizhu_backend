@@ -4,14 +4,12 @@ from fastapi import FastAPI, applications
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
-import os
+
 from utils import config, my_socket
 
 app = None
 
-if not os.path.exists("static"):
-    os.makedirs("static")
-    
+
 def create_app():
     app = FastAPI(
         title="逗地主后端服务",
