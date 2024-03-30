@@ -1,3 +1,5 @@
+import jsonpickle
+
 from utils import redis_key
 from utils.rds import conn as redis
 from PO.user import User as DB_User
@@ -5,7 +7,8 @@ from PO.user import User as DB_User
 # room_key = redis_key.room(room_id)
 
 
-redis.flushall()
+a = b"a"
+print((str(a)))
 
 
 # DB_User.update(rank=100).where(id == 3).execute()

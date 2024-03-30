@@ -72,6 +72,7 @@ class Room:
     base_score: int
     multiple: int
     tmp_bid_key: str
+    pass_players: list
 
     @classmethod
     def init_data(cls, id, is_ai=False):
@@ -91,6 +92,7 @@ class Room:
             "is_ai": "True" if is_ai else "False",
             'tmp_bid_key': 'p-0',
             'cur_term_begin_time': -1,
+            'pass_players': '[]',
         }
 
     @classmethod
@@ -102,7 +104,6 @@ class Room:
             for i in range(3):
                 p_key = f'p-{i}'
                 # 已经走了的人不能进来了
-                print("上一次的数据", prev_data['players'][i])
                 if prev_data['players'][i]['is_withdraw'] == True:
                     prev_data['players'][i] = {}
                 else:
@@ -360,6 +361,7 @@ class Room:
         pipe.hset(room_key, f"p-{player_idx}", jsonpickle.encode(player, unpicklable=False))
         pipe.hset(room_key, 'last_cards', jsonpickle.encode(played_cards, unpicklable=False))
         pipe.hset(room_key, 'last_cards_player_idx', cur_player_idx)
+        pipe.hset(room_key,"pass_players","[]")
         timestamp = int(time.time() * 1000)
         pipe.hset(room_key, 'cur_term_begin_time', timestamp)
         pipe.execute()
@@ -434,7 +436,9 @@ class Room:
     def __pass_cards(cls, room_id):
         room_key = redis_key.room(room_id)
         # 当前打出牌的前一个人
-        cur_player_idx = redis.hget(room_key, 'cur_player_idx')
+        cur_player_idx = redis.hget(room_key, 'cur_player_idx').decode('utf-8')
+        pass_players = jsonpickle.decode(redis.hget(room_key, "pass_players"))
+        pass_players.append(int(cur_player_idx))
         next_player_idx = str((int(cur_player_idx) + 1) % 3)
         last_cards_player_idx = redis.hget(room_key, 'last_cards_player_idx').decode('utf-8')
         timestamp = int(time.time() * 1000)
@@ -444,6 +448,7 @@ class Room:
         # 如果一圈都打不起，打这张牌的人继续打
         if next_player_idx == last_cards_player_idx:
             redis.hset(room_key, 'last_cards', '[]')
+        redis.hset(room_key, "pass_players", jsonpickle.encode(pass_players))
 
     @classmethod
     def human_pass_cards(cls, room_id):
@@ -548,6 +553,7 @@ class Room:
             players.append(player)
         tmp_utf8['players'] = players
         tmp_utf8['last_cards'] = jsonpickle.decode(tmp_utf8['last_cards'])
+        tmp_utf8['pass_players'] = jsonpickle.decode(tmp_utf8['pass_players'])
         # 叫分阶段不返回地主牌
         if int(tmp_utf8['status']) == STATUS_PLAYING:
             tmp_utf8['dizhu_cards'] = jsonpickle.decode(tmp_utf8['dizhu_cards'])
