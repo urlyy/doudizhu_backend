@@ -1,7 +1,6 @@
 from PO.chat_msg import ChatMsg as DB_ChatMsg
 from PO.user import User as DB_User
 
-
 class ChatMsg:
     id: int
     user_id: int
